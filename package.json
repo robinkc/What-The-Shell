@@ -1,7 +1,7 @@
 {
   "author": "Robin KC <arora.k.robin@gmail.com>",
-  "name": "wts",
-  "description": "What the Shell!. As of now, we have implementation of Command, Pipe and Shell Script - Which will enable you to implement High Performing, Highly Reusable node applications. Later implemementations of WTS will bring shell-way of doing things.",
+  "name": "What the Shell!",
+  "description": "As of now, we have implementation of Command, Pipe and Shell Script - Which will enable you to implement High Performing, Highly Reusable node applications. Later implemementations of WTS will bring shell-way of doing things.",
   "version": "0.0.1",
   "repository": {
     "url": ""
