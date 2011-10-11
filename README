@@ -1,0 +1,10 @@
+1) Commands
+		Standard Input
+		Standard Output
+		Reusable
+2) Pipe commands
+		The shell way. First reads Standard, Last write to Stdout
+		ScriptLine - Set of commands - piped in order
+3) Scripts
+		Set of lines - ScriptLine 's in order
+		Command and can be reused
