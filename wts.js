@@ -89,7 +89,7 @@ Command.prototype.end = function(){
 
 //One of the most useful methods. Pass it a file object and from now the command can start listening to this file read events on the function `onStdInput`
 //One more thing is, this command will end as soon as the standard input ends.
-Command.prototype.configStdInput = function(file){
+Command.prototype.input = function(file){
 	var that = this;
 	if(file){
 		that.stdin = file;
