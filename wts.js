@@ -1,6 +1,7 @@
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
 
+<<<<<<< HEAD
 /*
 PausableEventIssuer
 --------------------
@@ -37,10 +38,45 @@ PausableEventIssuer.prototype.issue = function(ev, data){
 		//console.log(this._eventsStack)
 	}
 	if(!this._isPaused){
+=======
+//Will act as pipes in commands
+var File = function(){
+	this.active = false;
+	this.events = [];
+}
+
+util.inherits(File, EventEmitter);
+
+File.prototype.write = function(msg){
+	//TODO: there could be a type/category of message being written also
+	//console('File got data ' + msg)
+	//console.log(this)
+	this._generateEvent('data', msg);
+}
+	
+File.prototype.pause = function(){
+	//If it is paused; hereafter events are not generated until resume() is called
+	this.active = false;
+	this.emit('pause');
+}
+
+File.prototype.resume = function(){
+	//Only after it is resumed, we start delievering events. Before resuming they are stored safely in an array
+	this.active = true;
+	this.emit('resume');
+	this._processEventQueue()
+}
+
+//Private method to facilitated delivery of events only after file is resumed
+File.prototype._generateEvent = function(ev, data){
+	this.events.push([ev, data]);
+	if(this.active){
+>>>>>>> bebdd1f90644c0b444bdcf6438bbbc37fd74f618
 		this._processEventQueue()
 	}
 }
 
+<<<<<<< HEAD
 //private method self loops through the events queue and emits them.
 PausableEventIssuer.prototype._processEventQueue = function(){
 	//console.log(this._eventsStack);
@@ -108,10 +144,34 @@ A command, in WTS, corresponds to a Shell Command - providing its basic features
 */
 var Command = function(args){
 	this.args = args;
+=======
+//private method that runs the queue
+File.prototype._processEventQueue = function(){
+	while(ev = this.events.shift()){
+		this.emit(ev[0], ev[1]);
+	}	
+}
+
+//To signify we have no more things to left in this file
+File.prototype.end = function(){
+	this._generateEvent('end');
+}
+
+/*
+Command represents a shell Command.
+It will do an atomic single work.
+It accepts params that can be used by sub-classing commands
+
+*/
+var Command = function(params){
+	//console.log('Command');
+	this.params = params;
+>>>>>>> bebdd1f90644c0b444bdcf6438bbbc37fd74f618
 }
 
 util.inherits(Command, EventEmitter);
 
+<<<<<<< HEAD
 //One of the most useful methods. Pass it a file object and a callback, the command can starts listening to this file read events.
 //if dontEndWithInput is set to true; the command will not end when stdin ends. else command will end automatically as stdin ends.
 Command.prototype.input = function(file, callback, dontEndWithInput){
@@ -150,14 +210,26 @@ Command.prototype.prepare = function (myProcess){
 		this.process=p
 	}
 	return this.process
+=======
+//Outputs `m` to Standard Output
+Command.prototype.output = function(m){
+	//console.log(m);
+	this.stdout.write(m);
+>>>>>>> bebdd1f90644c0b444bdcf6438bbbc37fd74f618
 }
 
 //Prepares the command and runs it in context of the process instance passed.
 Command.prototype.run = function (myProcess){
+<<<<<<< HEAD
 	this.prepare(myProcess)
 	//execute is abstract method; needs to be implemented in sub classes
 	this.execute()
 	return this.process;
+=======
+	this.stdin = myProcess.stdin;
+	this.stdout = myProcess.stdout;
+	this.execute();	
+>>>>>>> bebdd1f90644c0b444bdcf6438bbbc37fd74f618
 }
 
 //Ensures Command is sub-classed and then run by actual command and not just the prototype
@@ -165,6 +237,7 @@ Command.prototype.execute = function(){
 	throw new Exception('Execute needs to be overridden');
 }
 
+<<<<<<< HEAD
 //Signifies self the command is done. It is individual commands responsibility to specify when it is over.
 //Note: There is nothing automated to say when the command is over. We leave this responsibility on the developer building command to tell when it is done
 Command.prototype.end = function(){
@@ -260,6 +333,25 @@ MyProcess.prototype.end = function(status){
 
 MyProcess.prototype.hasEnded= function(){
 	return this._hasEnded
+=======
+//Signifies that the command is done. It is individual commands responsibility to specify when it is over.
+//Note: There is nothing automated to say when the command is over. We leave this responsibility on the developer building command to tell when it is done
+Command.prototype.end = function(){
+	this.stdout.end()
+	this.emit('end')	
+}
+
+//One of the most useful methods. Pass it a file object and from now the command can start listening to this file read events on the function `onStdInput`
+//One more thing is, this command will end as soon as the standard input ends.
+Command.prototype.input = function(file){
+	var that = this;
+	if(file){
+		that.stdin = file;
+	}
+	that.stdin.on('data', function(data){that.onStdInput(data);});
+	that.stdin.on('end', function(){that.end()});
+	that.stdin.resume();
+>>>>>>> bebdd1f90644c0b444bdcf6438bbbc37fd74f618
 }
 
 //ScriptLine represents a line in a shell script.
@@ -269,7 +361,10 @@ var ScriptLine = function(){
 	this.commands = []
 }
 
+<<<<<<< HEAD
 //ScriptLine is a command
+=======
+>>>>>>> bebdd1f90644c0b444bdcf6438bbbc37fd74f618
 util.inherits(ScriptLine, Command);
 
 ScriptLine.prototype.execute = function(){
@@ -277,13 +372,18 @@ ScriptLine.prototype.execute = function(){
 	var commands = this.commands;
 	var length = commands.length;
 	var i=0;
+<<<<<<< HEAD
 	var self=this;
 	var thisProcess = this.process
+=======
+	var that=this;
+>>>>>>> bebdd1f90644c0b444bdcf6438bbbc37fd74f618
 
 	//for first process standard input is ended
 	for(i=0; i<length; ++i){
 		//for first process stdin is ScriptLine.stdin
 		if(i==0){
+<<<<<<< HEAD
 			var stdin = thisProcess.stdin;
 		}
 		else{
@@ -299,12 +399,33 @@ ScriptLine.prototype.execute = function(){
 		
 		var p = commands[i].prepare({stdin : stdin, stdout : stdout})
 		process.nextTick(callbacker(p, p.run))
+=======
+			var stdin = this.stdin;
+		}
+		else{
+			var stdin = stdout; 
+		}
+		//for last process stdout = ScriptLine.stdout
+		if(i==(length - 1)){
+			var stdout = this.stdout;
+		}
+		else{
+			var stdout = new File();
+		}
+		
+		var tempProcess = {stdin : stdin, stdout : stdout};
+		process.nextTick(callbacker(commands[i], commands[i].run, tempProcess))
+>>>>>>> bebdd1f90644c0b444bdcf6438bbbc37fd74f618
 	}
 	
 	//when the last command ends; ScriptLine ends
 	commands[length-1].on('end', function(){
 		//console.log('Script Line End where legth = '+length);
+<<<<<<< HEAD
 		self.end();
+=======
+		that.end();
+>>>>>>> bebdd1f90644c0b444bdcf6438bbbc37fd74f618
 	})
 }
 
@@ -312,8 +433,69 @@ ScriptLine.prototype.add = function(c){
 	this.commands.push(c);
 }
 
+<<<<<<< HEAD
 var Script = function(){
 	Script.super_.call(this, arguments)
+=======
+var MyProcess = function(o){
+	this.stdin = o.stdin;
+	this.stdout = o.stdout;
+	this.active = false;
+	this.events = [];
+	this.data='';
+	
+	//start listening on stdout and storing it as data
+	var that = this;
+	that.stdout.on('data', function(d){
+		//console.log('Got Data')
+		that.data += d
+		that._generateEvent('data', d)
+	})
+	that.stdout.resume()
+}
+
+util.inherits(MyProcess, EventEmitter);
+
+MyProcess.prototype.pause = function(){
+	this.active = false;
+	this.emit('pause');
+}
+
+MyProcess.prototype.resume = function(){
+	//Only after it is resumed, we start delievering events. Before resuming they are stored safely in an array
+	this.active = true;
+	this.emit('resume');
+	this._processEventQueue()
+}
+
+//Private method to facilitated delivery of events only after file is resumed
+MyProcess.prototype._generateEvent = function(ev, data){
+	this.events.push([ev, data]);
+	if(this.active){
+		//console.log('Processing Queue')
+		this._processEventQueue()
+	}
+	else{
+		//console.log('Not Processing Queue')		
+	}
+}
+
+MyProcess.prototype._processEventQueue = function(){
+	while(ev = this.events.shift()){
+		this.emit(ev[0], ev[1]);
+	}	
+}
+
+//To signify we have no more things to send
+MyProcess.prototype.end = function(){
+	//console.log('process end')
+	this._generateEvent('end');
+}
+
+
+var Script = function(){
+	Command.call(this, arguments)
+>>>>>>> bebdd1f90644c0b444bdcf6438bbbc37fd74f618
 	this.lines = [];
 }
 
@@ -321,6 +503,7 @@ util.inherits(Script, Command);
 
 Script.prototype.execute = function(){
 	//console.log('Script execute')
+<<<<<<< HEAD
 	var self = this;
 	var thisProcess = self.process;
 	var lines = self.lines;
@@ -330,10 +513,20 @@ Script.prototype.execute = function(){
 	
 	var outputSequencer = new OutputSequencer(thisProcess.stdout)
 	
+=======
+	var that = this;
+	var lines = this.lines;
+	var length = lines.length;
+	var waitToEnd = length;
+	var i = 0;
+	var processes = []
+	
+>>>>>>> bebdd1f90644c0b444bdcf6438bbbc37fd74f618
 	for(i=0; i<length; i++){
 		var line = lines[i]
 
 		//console('i = '+i +' creating new STDOUT')
+<<<<<<< HEAD
 		var stdout = new RWFile();
 		if(line instanceof MyProcess){
 			p = line
@@ -343,6 +536,12 @@ Script.prototype.execute = function(){
 		}
 		/*p.on('data',function(data){
 			thisProcess.stdout.write(data)
+=======
+		var stdout = new File();
+		var p=new MyProcess({stdin : this.stdin, stdout : stdout})
+		p.on('data',function(data){
+			that.stdout.write(data)
+>>>>>>> bebdd1f90644c0b444bdcf6438bbbc37fd74f618
 		})
 		
 		//if its first process; resume process
@@ -350,6 +549,7 @@ Script.prototype.execute = function(){
 			p.resume()
 		}
 		else{
+<<<<<<< HEAD
 			//resume the process only when previous process exists.
 			processes[i-1].on('end', function(currentProcess, j){
 				return function(){
@@ -376,6 +576,30 @@ Script.prototype.execute = function(){
 		//console.log('last process ended. Ending Script')
 		self.end()
 	})
+=======
+			processes[i-1].on('end', function(j){
+				return function(){
+					j.resume();
+				}
+			}(p))
+		}
+		
+		line.on('end', function(j){
+			return function(){
+				//console.log('Command end')
+				j.end();
+			}
+		}(p))
+
+		processes.push(p)
+		//console.log(tempProcess)
+		process.nextTick(callbacker(line, line.run, p))
+	}
+	p.on('end', function(){
+		that.end()
+	})
+	
+>>>>>>> bebdd1f90644c0b444bdcf6438bbbc37fd74f618
 	//console.log('Running first line')
 	//console.log(tempProcess)
 	//console.log('Ran first line')
@@ -392,6 +616,7 @@ var callbacker = function(obj, method1, params){
 }
 
 
+<<<<<<< HEAD
 var OutputSequencer = function(stdout){
 	this.stdout = stdout
 	this._processes = []
@@ -461,3 +686,8 @@ var l = new Layout({head: h, body: b, foot: f})
 1) `run` returns a process object and this process object, henceforth, is used to access the command.
 2) The recieving command recieves the process object. Should subscribe to process.data and .end events in the logic.
 */
+=======
+exports.Script = Script
+exports.Command = Command
+exports.ScriptLine = ScriptLine
+>>>>>>> bebdd1f90644c0b444bdcf6438bbbc37fd74f618

@@ -1,0 +1,126 @@
+What The Shell aims at using node the way it should be. After reading next few lines, You will agree.
+
+PLEASE do not use so called best frameworks available in node as they all block for things which is totally anti-node. Here is something that would not block, no matter what. Here is true node.
+
+What The Shell is about its three components, nothing special - just three components
+
+1) Command - A command, in WTS, corresponds to a Shell Command - providing its basic features -  
+		1) Performs some operation //in method execute
+		2) Can optionally read Stdin // by calling this.input()
+		3) Writes output to Stdout // by calling this.output()
+		4) Once written, can be reused. //In Pipes, or Scripts
+	
+	In WTS, a Command is implemented by 
+		5) extending `Command` and implementing its abstract method `execute`.
+		6) Can be run individually or in ScriptLine or in Script.
+		7) Has to specifically signal that it is done. ;by calling this.end() 
+	
+	var wts = require('wts');
+	var Command = wts.Command
+	var ScriptLine = wts.ScriptLine
+	var Script = wts.Script
+
+	//5) extending `Command` and implementing its abstract method `execute`.
+	Grep = function(){
+		Command.call(this, arguments)
+	};
+	util.inherits(Grep, Command);
+
+	//
+	Grep.prototype.execute = function(){
+		//1) Performs some operation; this is the first method that is invoked
+		this.input() //2) Can optionally read Stdin; will call method onStdInput when data is received on stdin 
+	}
+
+	Grep.prototype.onStdInput = function(data){
+		var p = this.params; //this.params is the arguments array passed to constructor of the command
+		var l = p.length;
+		var i=0;
+		for(i=0; i<l ; i++){
+			if(data.indexOf(p[i]) != -1){
+				this.output(data); //3) Writes output to Stdout
+				return;
+			}
+		}
+	}
+	
+	//will output only the lines containing Steve Jobs
+	var grep = new Grep('Steve Jobs')
+	grep..run(process); //6) Can be run individually; reads from process.stdin and writes to process.stdout
+	
+	// 4) Once written, can be reused. Watch ScriptLine
+	// 7) Has to specifically signal that it is done. ;by calling this.end(); automatically signals done when stdin is over.
+	
+2) ScriptLine - A ScriptLine, as the name suggests, corresponds to a line of code in Shell Scripts.
+		1) Connects commands using pipes.
+		2) First Command reads from ScriptLine's stdin.
+		3) last command writes to ScriptLine's stdout.
+		4) Commands are completely, totally unaware of where the input comes from and where it goes.
+		5) Can be run individually or as part of a script
+		6) Understands and signals end without developer needing to worry
+	
+	lets implement cat 	
+	
+	var Cat = function(){
+		Command.call(this, arguments)
+	}
+	
+	util.inherits(Cat, Command);
+	
+	Cat.prototype.execute = function(){
+		var file = this.params[0];
+		
+		var fd = fopen(file) //lets assume this function
+		var l;
+		while (l = fread(fd)){  //lets assume fread reads and returns a single line from a file descriptor
+			//writes l to Standard Input
+			this.output(l)
+		}
+		this.end() // 7) Has to specifically signal that it is done.;
+	}
+	
+	var linesOfSJ = new ScriptLine();
+	linesOfSJ.add(cat) // becomes the first command in this ScriptLine
+	linesOfSJ.add(grep) // 1) Connects commands using pipes.; cat's output is piped to grep
+					// 4) Commands are completely, totally unaware of where the input comes from and where it goes.; cat is just outputing and grep is just reading without worrying where the input is from
+	
+	line1.run(process); // 3) last command writes to ScriptLine's stdout. ; grep's output will be seen on your screen - not cat's
+	
+3) Scripts - A Script, as you have guessed it right, is a set of ScriptLines'
+		1) Stores a sequence of ScriptLines to be run
+		2) Runs all of them in parallel // You can notice it while experimenting with Commands
+		3) Outputs in sequence of lines added. // Though all ScriptLines will run in parallel; their output will come only in sequence.
+		4) Understands and signals end without developer needing to worry
+		5) Can be reused as a command
+		
+	//lets assume following two commands
+	var header = new Header() // reads from cached file and returns; takes say 2 seconds; genreates 'I am Header'
+	var footer = new Footer () // reads from cached file and returns; takes say 1 second; genreates 'I am Footer'
+	
+	var headerLine = new ScriptLine();
+	headerLine.add(header);
+	var footerLine = new ScriptLine();
+	footerLine.add(footer);
+
+	var script = new Script();
+	script.add(headerLine);//1) Stores a sequence of ScriptLines to be run; this is first line
+	script.add(linesOfSJ); //this is second
+	script.add(footerLine); //third line
+	
+	script.run(process)
+	// 2) Runs all of them in parallel; While header is blocked reading cache; cat and grep will start executing and so will footer
+	// 3) Outputs in sequence of lines added. // though cat | grep and footer were running and footer's output would have been generated much before header and cat | grep - footer's output will be cached and released only when all the ScriptLines before it are done executing.
+	// 4) Understands and signals end without developer needing to worry; will signal end when footer's output is released to stdout.
+	
+	var finalOutput = new ScriptLine();
+	var view = new View('html'); // lets assume View reads from Stdin and outputs formatted html
+	
+	finalOutput.add(script) // 5) Can be reused as a command
+	finalOutput.add(view) // script | view :)
+	
+And that's it about What The Shell V0.0.1. There is a lot more in queue for next releases and we will stick to our agenda - Do Things Shell-way.
+
+By The way, These are basic things - though big terms to listen - you will get by using WTS - 
+1) Code Reusability - Commands, ScriptLines and Scripts all are reusable in any fashion
+2) High Performance - Everything runs whenever it can; produces output whenever it should be. NO CACHING OF OUTPUT IF IT CAN BE PRODUCED.
+3) Code Readability - You write it the sequential way, but it runs in a multi-threaded non-blocking fashion. Easily readable, maintainable
