@@ -1,9 +1,7 @@
-var restler = require('restler')
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
-var http = require('http');
 
-var Command = function(args){ 
+var Command = function(args){
 	//console.log(args);
 	this.args = args;
 	this._outputData = [];
@@ -21,11 +19,6 @@ Command.prototype.setArgument = function(name, value){
 
 Command.prototype.getArgument = function(name){
 	return this.args[name]
-}
-
-Command.prototype.setArguments = function(args){
-	this.args = args;
-	//console.log(this.args);
 }
 
 //START
@@ -135,3 +128,6 @@ util.inherits(OutputSequencer, Command);
 OutputSequencer.prototype.execute = function(){
 	//Do nothing; it will be ended by the caller
 }
+
+exports.Command = Command;
+exports.OutputSequencer = OutputSequencer;
