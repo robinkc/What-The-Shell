@@ -125,6 +125,7 @@ By The way, These are basic things - though big terms to listen - you will get b
 2) High Performance - Everything runs whenever it can; produces output whenever it should be. NO CACHING OF OUTPUT IF IT CAN BE PRODUCED.
 3) Code Readability - You write it the sequential way, but it runs in a multi-threaded non-blocking fashion. Easily readable, maintainable
 
+PS:: Gotta rebuild it using streams.
 ## License 
 
 (The MIT License)
