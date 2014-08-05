@@ -1,3 +1,5 @@
+//TODO::Do it using node.js streams
+
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
 
